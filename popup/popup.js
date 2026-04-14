@@ -77,6 +77,7 @@ async function writeFile(dirHandle, fileName, content, subFolder) {
 			break;
 		}
 	}
+	// 파일 핸들을 create: true로 새로 가져와서 stale 방지
 	const fileHandle = await targetHandle.getFileHandle(finalName, {
 		create: true,
 	});
@@ -127,7 +128,9 @@ async function updateBacklinks(dirHandle, newFileName, newContent) {
 				if (commonTags.length > 0) {
 					const updated = insertLink(content, newNameNoExt);
 					if (updated !== content) {
-						const writable = await entry.createWritable();
+						// entry 대신 handle에서 fresh하게 다시 가져와서 stale 방지
+						const freshEntry = await handle.getFileHandle(name);
+						const writable = await freshEntry.createWritable();
 						await writable.write(updated);
 						await writable.close();
 						updatedCount++;
