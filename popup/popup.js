@@ -27,7 +27,13 @@ const PLATFORM_INFO = {
 // IndexedDB에서 vault 핸들 로드
 async function loadVaultHandle() {
 	return new Promise(resolve => {
-		const req = indexedDB.open('obsicapture', 1);
+		const req = indexedDB.open('obsicapture', 2);
+		req.onupgradeneeded = e => {
+			const db = e.target.result;
+			if (!db.objectStoreNames.contains('handles')) {
+				db.createObjectStore('handles');
+			}
+		};
 		req.onsuccess = () => {
 			const db = req.result;
 			if (!db.objectStoreNames.contains('handles')) return resolve(null);

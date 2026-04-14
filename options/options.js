@@ -10,8 +10,13 @@ const DB_NAME = 'obsicapture';
 
 function openDB() {
 	return new Promise((resolve, reject) => {
-		const req = indexedDB.open(DB_NAME, 1);
-		req.onupgradeneeded = () => req.result.createObjectStore('handles');
+		const req = indexedDB.open(DB_NAME, 2); // 버전 올려서 강제 재생성
+		req.onupgradeneeded = e => {
+			const db = e.target.result;
+			if (!db.objectStoreNames.contains('handles')) {
+				db.createObjectStore('handles');
+			}
+		};
 		req.onsuccess = () => resolve(req.result);
 		req.onerror = () => reject(req.error);
 	});

@@ -1,7 +1,7 @@
 {
 	"manifest_version": 3,
 	"name": "ObsiCapture",
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"description": "AI 대화를 원클릭으로 Obsidian 노트에 저장합니다.",
 	"permissions": ["storage", "activeTab", "scripting"],
 	"host_permissions": [
