@@ -1,6 +1,4 @@
 // popup/popup.js
-// 로컬 저장은 여기서 File System Access API로 직접 처리
-// service worker는 요약/키워드/Drive/Webhook만 담당
 
 const platformBadge = document.getElementById('platform-badge');
 const titlePreview = document.getElementById('title-preview');
@@ -17,6 +15,7 @@ const settingsLink = document.getElementById('settings-link');
 let currentTab = null;
 let conversationData = null;
 let pendingSummary = null;
+let saveMode = 'summarize'; // 'summarize' | 'raw'
 
 const PLATFORM_INFO = {
 	claude: { label: '🟣 Claude', className: 'claude' },
@@ -77,7 +76,6 @@ async function writeFile(dirHandle, fileName, content, subFolder) {
 			break;
 		}
 	}
-	// 파일 핸들을 create: true로 새로 가져와서 stale 방지
 	const fileHandle = await targetHandle.getFileHandle(finalName, {
 		create: true,
 	});
@@ -128,7 +126,6 @@ async function updateBacklinks(dirHandle, newFileName, newContent) {
 				if (commonTags.length > 0) {
 					const updated = insertLink(content, newNameNoExt);
 					if (updated !== content) {
-						// entry 대신 handle에서 fresh하게 다시 가져와서 stale 방지
 						const freshEntry = await handle.getFileHandle(name);
 						const writable = await freshEntry.createWritable();
 						await writable.write(updated);
@@ -151,6 +148,23 @@ function insertLink(text, noteName) {
 	return text + `\n\n## 관련 노트\n- [[${noteName}]]\n`;
 }
 
+// raw 모드: API 없이 대화를 마크다운으로 포맷
+function formatRaw({ title, conversation, platform }) {
+	const today = new Date().toISOString().slice(0, 10);
+	const platformLabel = platform === 'claude' ? 'Claude' : 'ChatGPT';
+	const body = conversation
+		.map(t => `**${t.role === 'user' ? '나' : 'AI'}**\n\n${t.content}`)
+		.join('\n\n---\n\n');
+	return `# ${title}\n날짜: ${today}\n플랫폼: ${platformLabel}\n\n---\n\n${body}`;
+}
+
+function sanitizeFileName(str) {
+	return str
+		.replace(/[/\\?%*:|"<>]/g, '-')
+		.trim()
+		.slice(0, 100);
+}
+
 // 초기화
 (async () => {
 	const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -170,8 +184,16 @@ function insertLink(text, noteName) {
 
 	// 설정 확인
 	const settings = await new Promise(r =>
-		chrome.storage.sync.get(['saveMethod', 'claudeApiKey'], r),
+		chrome.storage.sync.get(['saveMethod', 'claudeApiKey', 'summarizeMode'], r),
 	);
+	saveMode = settings.summarizeMode ?? 'summarize';
+
+	// raw 모드면 추가 지시사항 숨기기
+	if (saveMode === 'raw') {
+		customPromptInput.style.display = 'none';
+		const customLabel = customPromptInput.previousElementSibling;
+		if (customLabel) customLabel.style.display = 'none';
+	}
 
 	if (settings.saveMethod === 'local' || !settings.saveMethod) {
 		const handle = await loadVaultHandle();
@@ -183,7 +205,6 @@ function insertLink(text, noteName) {
 			return;
 		}
 
-		// 초기화 시엔 queryPermission만 (requestPermission은 저장 버튼 클릭 시)
 		const perm = await handle.queryPermission({ mode: 'readwrite' });
 		if (perm === 'denied') {
 			setStatus(
@@ -192,8 +213,7 @@ function insertLink(text, noteName) {
 			);
 			return;
 		}
-		// perm이 'granted' 또는 'prompt'면 계속 진행 (저장 시점에 requestPermission 호출)
-		// 폴더 목록 로드
+
 		try {
 			const folders = await getVaultFolders(handle);
 			if (folders.length > 1) {
@@ -245,13 +265,29 @@ folderSelect.addEventListener('change', () => {
 	chrome.storage.local.set({ lastFolder: folderSelect.value });
 });
 
-// 1단계: 요약 생성
+// 1단계: 요약 생성 or raw 포맷
 saveBtn.addEventListener('click', async () => {
 	if (!conversationData) return;
 	saveBtn.disabled = true;
 	confirmBtn.style.display = 'none';
 	filenameInput.classList.remove('visible');
 	labelFilename.classList.remove('visible');
+
+	// raw 모드: API 호출 없이 직접 처리
+	if (saveMode === 'raw') {
+		const summaryRaw = formatRaw(conversationData);
+		const fileName = sanitizeFileName(conversationData.title || '대화 내용');
+		pendingSummary = { fileName, summaryRaw, keywords: [] };
+		filenameInput.value = fileName;
+		filenameInput.classList.add('visible');
+		labelFilename.classList.add('visible');
+		confirmBtn.style.display = 'flex';
+		setStatus('loading', '⏳ 파일명 확인 후 저장해주세요.');
+		saveBtn.disabled = false;
+		return;
+	}
+
+	// summarize 모드: service worker로 AI 요약
 	setStatus('loading', '⏳ 요약 생성 중...');
 
 	function statusListener(msg) {
@@ -289,7 +325,6 @@ confirmBtn.addEventListener('click', async () => {
 	confirmBtn.disabled = true;
 	saveBtn.disabled = true;
 
-	// 클릭 직후 즉시 권한 요청 (user activation 소멸 전)
 	const handle = await loadVaultHandle();
 	if (!handle) {
 		setStatus('error', '❌ Vault 폴더가 설정되지 않았습니다.');

@@ -18,6 +18,13 @@ async function handleSummarize({
 	customPrompt,
 }) {
 	const settings = await getSettings();
+
+	if (settings.summarizeMode === 'raw') {
+		const summaryRaw = formatRaw({ title, conversation, platform });
+		const fileName = sanitize(title) || '대화 내용';
+		return { fileName, summaryRaw, keywords: [] };
+	}
+
 	if (!settings.claudeApiKey)
 		throw new Error('Claude API 키가 설정되지 않았습니다.');
 
@@ -39,6 +46,15 @@ async function handleSummarize({
 	const fileName = extractTitle(summaryClean) || sanitize(title);
 
 	return { fileName, summaryRaw: summaryClean, keywords };
+}
+
+function formatRaw({ title, conversation, platform }) {
+	const today = new Date().toISOString().slice(0, 10);
+	const platformLabel = platform === 'claude' ? 'Claude' : 'ChatGPT';
+	const body = conversation
+		.map(t => `**${t.role === 'user' ? '나' : 'AI'}**\n\n${t.content}`)
+		.join('\n\n---\n\n');
+	return `# ${title}\n날짜: ${today}\n플랫폼: ${platformLabel}\n\n---\n\n${body}`;
 }
 
 function sanitizeTags(text) {
@@ -71,7 +87,7 @@ function sanitize(str) {
 
 async function getSettings() {
 	return new Promise(resolve =>
-		chrome.storage.sync.get(['claudeApiKey'], resolve),
+		chrome.storage.sync.get(['claudeApiKey', 'summarizeMode'], resolve),
 	);
 }
 

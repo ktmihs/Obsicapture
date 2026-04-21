@@ -129,6 +129,43 @@
 			.toast.show {
 				opacity: 1;
 			}
+			/* 저장 모드 선택 */
+			.mode-options {
+				display: flex;
+				flex-direction: column;
+				gap: 10px;
+			}
+			.mode-option {
+				display: flex;
+				align-items: flex-start;
+				gap: 12px;
+				padding: 14px 16px;
+				border: 2px solid #e0e0e0;
+				border-radius: 10px;
+				cursor: pointer;
+				transition:
+					border-color 0.2s,
+					background 0.2s;
+			}
+			.mode-option:has(input:checked) {
+				border-color: #7c4dff;
+				background: #f5f0ff;
+			}
+			.mode-option input[type='radio'] {
+				margin-top: 2px;
+				accent-color: #7c4dff;
+				flex-shrink: 0;
+			}
+			.mode-title {
+				font-size: 14px;
+				font-weight: 700;
+				color: #1a1a2e;
+				margin-bottom: 3px;
+			}
+			.mode-desc {
+				font-size: 12px;
+				color: #888;
+			}
 		</style>
 	</head>
 	<body>
@@ -137,6 +174,35 @@
 			<div class="page-subtitle">처음 한 번만 설정하면 돼요.</div>
 
 			<div class="card">
+				<div class="card-title">⚡ 저장 모드</div>
+				<div class="mode-options">
+					<label class="mode-option">
+						<input
+							type="radio"
+							name="mode"
+							value="summarize"
+							id="mode-summarize"
+						/>
+						<div>
+							<div class="mode-title">🤖 AI 요약 저장</div>
+							<div class="mode-desc">
+								Claude Haiku가 대화를 요약·정리해서 저장 (API 키 필요)
+							</div>
+						</div>
+					</label>
+					<label class="mode-option">
+						<input type="radio" name="mode" value="raw" id="mode-raw" />
+						<div>
+							<div class="mode-title">📄 원문 그대로 저장</div>
+							<div class="mode-desc">
+								API 키 없이 대화 내용을 마크다운으로 그대로 저장
+							</div>
+						</div>
+					</label>
+				</div>
+			</div>
+
+			<div class="card" id="api-key-card">
 				<div class="card-title">🔑 Claude API 키</div>
 				<div class="field">
 					<input
