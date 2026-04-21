@@ -1,63 +1,86 @@
 // content/chatgpt.js
-// ChatGPT 대화 추출 파서
 
 (function () {
-  const SELECTORS = {
-    turn: '[data-message-author-role]',
-    // fallback
-    humanFallback: '.whitespace-pre-wrap',
-    aiFallback: '.markdown',
-  };
+	const SELECTORS = {
+		turn: '[data-message-author-role]',
+		humanFallback: '.whitespace-pre-wrap',
+		aiFallback: '.markdown',
+	};
 
-  function extractConversation() {
-    let turns = [];
+	// ChatGPT UI 잔여 텍스트 제거
+	const UI_ARTIFACT_PATTERNS = [
+		/^\(웹 검색됨\)$/,
+		/^웹 검색됨$/,
+		/^Searched the web$/,
+		/^이미지 생성됨$/,
+		/^메모리 업데이트됨$/,
+		/^Memory updated$/,
+		/^검색 결과 \d+개$/,
+		/^[\d]+ results?$/,
+		/^(GPT-4o?|4o|4o-mini|o1|o1-mini|o3|o3-mini)$/,
+	];
 
-    const allTurns = document.querySelectorAll(SELECTORS.turn);
+	function cleanContent(text) {
+		return text
+			.split('\n')
+			.filter(line => {
+				const trimmed = line.trim();
+				return !UI_ARTIFACT_PATTERNS.some(p => p.test(trimmed));
+			})
+			.join('\n')
+			.replace(/\n{3,}/g, '\n\n')
+			.trim();
+	}
 
-    if (allTurns.length > 0) {
-      turns = Array.from(allTurns).map((el) => ({
-        role: el.getAttribute('data-message-author-role') === 'user' ? 'user' : 'assistant',
-        content: el.innerText.trim(),
-      }));
-    } else {
-      // fallback: 순서 보장이 어려워 번갈아 배치 가정
-      const humanEls = document.querySelectorAll(SELECTORS.humanFallback);
-      const aiEls = document.querySelectorAll(SELECTORS.aiFallback);
-      const maxLen = Math.max(humanEls.length, aiEls.length);
+	function extractConversation() {
+		let turns = [];
 
-      for (let i = 0; i < maxLen; i++) {
-        if (humanEls[i]) turns.push({ role: 'user', content: humanEls[i].innerText.trim() });
-        if (aiEls[i]) turns.push({ role: 'assistant', content: aiEls[i].innerText.trim() });
-      }
-    }
+		const allTurns = document.querySelectorAll(SELECTORS.turn);
 
-    return turns.filter((t) => t.content.length > 0);
-  }
+		if (allTurns.length > 0) {
+			turns = Array.from(allTurns).map(el => ({
+				role:
+					el.getAttribute('data-message-author-role') === 'user'
+						? 'user'
+						: 'assistant',
+				content: cleanContent(el.innerText.trim()),
+			}));
+		} else {
+			const humanEls = document.querySelectorAll(SELECTORS.humanFallback);
+			const aiEls = document.querySelectorAll(SELECTORS.aiFallback);
+			const maxLen = Math.max(humanEls.length, aiEls.length);
+			for (let i = 0; i < maxLen; i++) {
+				if (humanEls[i])
+					turns.push({
+						role: 'user',
+						content: cleanContent(humanEls[i].innerText.trim()),
+					});
+				if (aiEls[i])
+					turns.push({
+						role: 'assistant',
+						content: cleanContent(aiEls[i].innerText.trim()),
+					});
+			}
+		}
 
-  function getPageTitle() {
-    return document.title?.replace('ChatGPT - ', '').trim() || '제목 없음';
-  }
+		return turns.filter(t => t.content.length > 0);
+	}
 
-  chrome.runtime.onMessage.addListener((msg, _, sendResponse) => {
-    if (msg.type === 'GET_CONVERSATION') {
-      const conversation = extractConversation();
-      const title = getPageTitle();
-      sendResponse({
-        platform: 'chatgpt',
-        title,
-        conversation,
-        url: window.location.href,
-      });
-    }
-    return true;
-  });
+	function getPageTitle() {
+		return document.title?.replace('ChatGPT - ', '').trim() || '제목 없음';
+	}
 
-  const observer = new MutationObserver(() => {
-    const valid = document.querySelector(SELECTORS.turn);
-    if (!valid) {
-      console.warn('[ObsiCapture] ChatGPT selector가 변경되었을 수 있습니다.');
-    }
-  });
-
-  observer.observe(document.body, { childList: true, subtree: true });
+	chrome.runtime.onMessage.addListener((msg, _, sendResponse) => {
+		if (msg.type === 'GET_CONVERSATION') {
+			const conversation = extractConversation();
+			const title = getPageTitle();
+			sendResponse({
+				platform: 'chatgpt',
+				title,
+				conversation,
+				url: window.location.href,
+			});
+		}
+		return true;
+	});
 })();
