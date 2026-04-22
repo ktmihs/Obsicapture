@@ -320,13 +320,13 @@ export class DocPanel {
     }
     .settings-link:hover { color: #c8b5f5; }
 
-    .cursor::after { content: '▋'; animation: blink 0.8s step-end infinite; }
+    .cursor::after { content: '\\258B'; animation: blink 0.8s step-end infinite; }
     @keyframes blink { 50% { opacity: 0; } }
   </style>
 </head>
 <body>
   <div class="header">
-    <span class="header-logo">📎</span>
+    <span class="header-logo">&#x1F4CE;</span>
     <div>
       <div class="header-title">ObsiCapture</div>
       <div class="header-meta" id="header-meta">프로젝트 분석 중...</div>
@@ -341,7 +341,7 @@ export class DocPanel {
       <textarea id="prompt" placeholder="예: 이 프로젝트의 API 레퍼런스 문서 작성해줘&#10;예: 주요 컴포넌트 구조와 props 정리해줘&#10;예: 신규 개발자 온보딩 가이드 만들어줘"></textarea>
     </div>
 
-    <button class="generate-btn" id="generate-btn" disabled>✨ 문서 생성</button>
+    <button class="generate-btn" id="generate-btn" disabled>&#x2728; 문서 생성</button>
 
     <div class="preview-wrap" id="preview-wrap">
       <div class="preview-label">미리보기</div>
@@ -355,12 +355,12 @@ export class DocPanel {
         <select id="folder-select"></select>
         <input type="text" id="filename-input" placeholder="파일명" />
       </div>
-      <button class="save-btn" id="save-btn">💾 Obsidian에 저장</button>
+      <button class="save-btn" id="save-btn">&#x1F4BE; Obsidian에 저장</button>
     </div>
   </div>
 
   <div class="footer">
-    <button class="settings-link" id="settings-link">⚙ 설정</button>
+    <button class="settings-link" id="settings-link">&#x2699; 설정</button>
   </div>
 
   <script>
@@ -409,7 +409,7 @@ export class DocPanel {
         case 'PROJECT_INFO': {
           els.meta.textContent = data.name + ' · ' + data.fileCount + '개 파일';
           els.info.innerHTML =
-            '📁 <strong>' + data.name + '</strong> &nbsp;|&nbsp; ' +
+            '<strong>' + data.name + '</strong> &nbsp;|&nbsp; ' +
             '파일 ' + data.fileCount + '개 &nbsp;|&nbsp; ' +
             '예상 토큰 ~' + data.tokens.toLocaleString();
           els.info.classList.add('visible');
@@ -427,7 +427,7 @@ export class DocPanel {
           els.preview.classList.add('cursor');
           els.saveArea.classList.remove('visible');
           els.generateBtn.disabled = true;
-          setStatus('loading', '⏳ 문서 생성 중...');
+          setStatus('loading', '문서 생성 중...');
           break;
 
         case 'STREAM_CHUNK':
@@ -440,11 +440,11 @@ export class DocPanel {
           els.generateBtn.disabled = false;
           els.fileInput.value = data.suggestedFileName;
           els.saveArea.classList.add('visible');
-          setStatus('success', '✅ 생성 완료! 파일명 확인 후 저장하세요.');
+          setStatus('success', '생성 완료! 파일명 확인 후 저장하세요.');
           break;
 
         case 'SAVE_DONE':
-          setStatus('success', '✅ 저장 완료!\n📄 ' + data.path);
+          setStatus('success', '저장 완료!\n' + data.path);
           els.saveBtn.disabled = false;
           break;
 
@@ -452,7 +452,7 @@ export class DocPanel {
           els.preview.classList.remove('cursor');
           els.generateBtn.disabled = false;
           els.saveBtn.disabled = false;
-          setStatus('error', '❌ ' + data.message);
+          setStatus('error', '[오류] ' + data.message);
           break;
       }
     });
