@@ -2,7 +2,7 @@
 	"name": "obsicapture",
 	"displayName": "ObsiCapture",
 	"description": "프로젝트 코드 기반 문서를 Claude AI로 생성하고 Obsidian에 저장",
-	"version": "0.1.1",
+	"version": "0.1.3",
 	"publisher": "obsicapture",
 	"engines": {
 		"vscode": "^1.85.0"
