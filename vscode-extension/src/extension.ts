@@ -6,29 +6,11 @@ export function activate(context: vscode.ExtensionContext) {
 		vscode.commands.registerCommand('obsicapture.openPanel', () => {
 			const config = vscode.workspace.getConfiguration('obsicapture');
 			const apiKey = config.get<string>('claudeApiKey', '');
-			const vaultPath = config.get<string>('vaultPath', '');
 
 			if (!apiKey) {
 				vscode.window
 					.showErrorMessage(
 						'ObsiCapture: Claude API 키가 설정되지 않았습니다.',
-						'설정 열기',
-					)
-					.then(action => {
-						if (action === '설정 열기') {
-							vscode.commands.executeCommand(
-								'workbench.action.openSettings',
-								'obsicapture',
-							);
-						}
-					});
-				return;
-			}
-
-			if (!vaultPath) {
-				vscode.window
-					.showErrorMessage(
-						'ObsiCapture: Obsidian Vault 경로가 설정되지 않았습니다.',
 						'설정 열기',
 					)
 					.then(action => {
