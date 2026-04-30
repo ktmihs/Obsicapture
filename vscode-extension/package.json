@@ -2,7 +2,7 @@
 	"name": "obsicapture",
 	"displayName": "ObsiCapture",
 	"description": "Generate project documentation with Claude AI and save directly to Obsidian",
-	"version": "0.1.6",
+	"version": "0.1.7",
 	"publisher": "ktmihs",
 	"icon": "images/marketplace-icon.png",
 	"repository": {
@@ -67,7 +67,10 @@
 				"obsicapture.claudeMode": {
 					"type": "string",
 					"default": "api",
-					"enum": ["api", "cli"],
+					"enum": [
+						"api",
+						"cli"
+					],
 					"enumDescriptions": [
 						"Anthropic API 키를 직접 사용",
 						"로컬에 설치된 Claude Code CLI 사용 (API 키 불필요)"
