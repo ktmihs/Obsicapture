@@ -58,6 +58,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
 							: ['(vault 루트)'];
 					})();
 					const defaultFolder = config.get<string>('defaultFolder', '');
+					const maxChars = config.get<number>('maxChars', 0);
 					const workspaceName = vscode.workspace.workspaceFolders?.[0]
 						? path.basename(vscode.workspace.workspaceFolders[0].uri.fsPath)
 						: '(워크스페이스 없음)';
@@ -72,6 +73,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
 						workspaceName,
 						folders,
 						defaultFolder,
+						maxChars,
 						mode,
 						cliAvailable: cliStatus?.available,
 						cliUser: cliStatus?.user,
