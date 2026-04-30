@@ -2,13 +2,23 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
 import { readProjectFiles, formatFilesForPrompt } from './CodeReader';
-import { generateDocument, extractTitle } from './ClaudeClient';
-import { saveToObsidian, listVaultFolders } from './ObsidianWriter';
+import {
+	generateDocument,
+	extractTitle,
+	getCliStatus,
+	CliStatus,
+} from './ClaudeClient';
+import {
+	saveToObsidian,
+	listVaultFolders,
+	createVaultFolder,
+} from './ObsidianWriter';
 
 type Message =
 	| { type: 'READY' }
 	| { type: 'GENERATE'; prompt: string }
 	| { type: 'SAVE'; fileName: string; folder: string }
+	| { type: 'CREATE_FOLDER'; folderPath: string }
 	| { type: 'OPEN_SETTINGS' };
 
 export class SidebarProvider implements vscode.WebviewViewProvider {
@@ -40,6 +50,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
 		switch (msg.type) {
 			case 'READY': {
 				try {
+					const mode = config.get<'api' | 'cli'>('claudeMode', 'api');
 					const folders = await (async () => {
 						const vaultPath = config.get<string>('vaultPath', '');
 						return vaultPath
@@ -47,14 +58,25 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
 							: ['(vault 루트)'];
 					})();
 					const defaultFolder = config.get<string>('defaultFolder', '');
+					const maxChars = config.get<number>('maxChars', 0);
 					const workspaceName = vscode.workspace.workspaceFolders?.[0]
 						? path.basename(vscode.workspace.workspaceFolders[0].uri.fsPath)
 						: '(워크스페이스 없음)';
+
+					let cliStatus: CliStatus | undefined;
+					if (mode === 'cli') {
+						cliStatus = await getCliStatus();
+					}
+
 					this.post({
 						type: 'READY_ACK',
 						workspaceName,
 						folders,
 						defaultFolder,
+						maxChars,
+						mode,
+						cliAvailable: cliStatus?.available,
+						cliUser: cliStatus?.user,
 					});
 				} catch (e) {
 					this.post({ type: 'ERROR', message: String(e) });
@@ -63,9 +85,19 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
 			}
 
 			case 'GENERATE': {
+				const mode = config.get<'api' | 'cli'>('claudeMode', 'api');
 				const apiKey = config.get<string>('claudeApiKey', '');
 				const model = config.get<string>('model', 'claude-sonnet-4-6');
 				const maxFiles = config.get<number>('maxFiles', 50);
+
+				if (mode === 'api' && !apiKey) {
+					this.post({
+						type: 'ERROR',
+						message:
+							'API 모드에서는 Claude API 키가 필요합니다. 설정에서 입력해주세요.',
+					});
+					return;
+				}
 
 				this.generatedContent = '';
 				this.post({ type: 'STREAM_START' });
@@ -75,6 +107,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
 					const codeContext = formatFilesForPrompt(ctx);
 
 					await generateDocument({
+						mode,
 						apiKey,
 						model,
 						codeContext,
@@ -115,6 +148,29 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
 						this.generatedContent,
 					);
 					this.post({ type: 'SAVE_DONE', path: savedPath });
+				} catch (e) {
+					this.post({ type: 'ERROR', message: String(e) });
+				}
+				break;
+			}
+
+			case 'CREATE_FOLDER': {
+				const vaultPath = config.get<string>('vaultPath', '');
+				if (!vaultPath) {
+					this.post({
+						type: 'ERROR',
+						message: 'Vault 경로가 설정되지 않았습니다.',
+					});
+					return;
+				}
+				try {
+					await createVaultFolder(vaultPath, msg.folderPath);
+					const folders = await listVaultFolders(vaultPath);
+					this.post({
+						type: 'FOLDER_CREATED',
+						folders,
+						newFolder: msg.folderPath,
+					});
 				} catch (e) {
 					this.post({ type: 'ERROR', message: String(e) });
 				}

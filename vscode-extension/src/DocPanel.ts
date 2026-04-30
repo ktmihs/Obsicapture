@@ -60,6 +60,7 @@ export class DocPanel {
 							: ['(vault 루트)'];
 					})();
 					const defaultFolder = config.get<string>('defaultFolder', '');
+					const maxChars = config.get<number>('maxChars', 0);
 					const workspaceName = vscode.workspace.workspaceFolders?.[0]
 						? path.basename(vscode.workspace.workspaceFolders[0].uri.fsPath)
 						: '(워크스페이스 없음)';
@@ -68,6 +69,7 @@ export class DocPanel {
 						workspaceName,
 						folders,
 						defaultFolder,
+						maxChars,
 					});
 				} catch (e) {
 					this.post({ type: 'ERROR', message: String(e) });
@@ -76,9 +78,19 @@ export class DocPanel {
 			}
 
 			case 'GENERATE': {
+				const mode = config.get<'api' | 'cli'>('claudeMode', 'api');
 				const apiKey = config.get<string>('claudeApiKey', '');
 				const model = config.get<string>('model', 'claude-sonnet-4-6');
 				const maxFiles = config.get<number>('maxFiles', 50);
+
+				if (mode === 'api' && !apiKey) {
+					this.post({
+						type: 'ERROR',
+						message:
+							'API 모드에서는 Claude API 키가 필요합니다. 설정에서 입력해주세요.',
+					});
+					return;
+				}
 
 				this.generatedContent = '';
 				this.post({ type: 'STREAM_START' });
@@ -88,6 +100,7 @@ export class DocPanel {
 					const codeContext = formatFilesForPrompt(ctx);
 
 					await generateDocument({
+						mode,
 						apiKey,
 						model,
 						codeContext,

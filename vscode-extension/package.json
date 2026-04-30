@@ -2,7 +2,7 @@
 	"name": "obsicapture",
 	"displayName": "ObsiCapture",
 	"description": "Generate project documentation with Claude AI and save directly to Obsidian",
-	"version": "0.1.5",
+	"version": "0.2.0",
 	"publisher": "ktmihs",
 	"icon": "images/marketplace-icon.png",
 	"repository": {
@@ -64,10 +64,23 @@
 		"configuration": {
 			"title": "ObsiCapture",
 			"properties": {
+				"obsicapture.claudeMode": {
+					"type": "string",
+					"default": "api",
+					"enum": [
+						"api",
+						"cli"
+					],
+					"enumDescriptions": [
+						"Anthropic API 키를 직접 사용",
+						"로컬에 설치된 Claude Code CLI 사용 (API 키 불필요)"
+					],
+					"description": "Claude 연동 방식"
+				},
 				"obsicapture.claudeApiKey": {
 					"type": "string",
 					"default": "",
-					"description": "Anthropic Claude API 키"
+					"description": "Anthropic Claude API 키 (API 모드에서만 사용)"
 				},
 				"obsicapture.vaultPath": {
 					"type": "string",
@@ -83,6 +96,12 @@
 					"type": "number",
 					"default": 50,
 					"description": "한 번에 읽을 최대 파일 수"
+				},
+				"obsicapture.maxChars": {
+					"type": "number",
+					"default": 0,
+					"minimum": 0,
+					"description": "프롬프트 입력 최대 글자수 (0 = 제한 없음)"
 				},
 				"obsicapture.model": {
 					"type": "string",
