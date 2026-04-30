@@ -35,14 +35,34 @@ async function resolveFileName(dir: string, fileName: string): Promise<string> {
 }
 
 export async function listVaultFolders(vaultPath: string): Promise<string[]> {
-	try {
-		const entries = await fs.readdir(vaultPath, { withFileTypes: true });
-		const folders = entries
-			.filter(e => e.isDirectory() && !e.name.startsWith('.'))
-			.map(e => e.name)
-			.sort();
-		return ['(vault 루트)', ...folders];
-	} catch {
-		return ['(vault 루트)'];
+	const result: string[] = [];
+
+	async function walk(dir: string, rel: string, depth: number) {
+		if (depth > 3) {
+			return;
+		}
+		try {
+			const entries = await fs.readdir(dir, { withFileTypes: true });
+			for (const e of entries.sort((a, b) => a.name.localeCompare(b.name))) {
+				if (!e.isDirectory() || e.name.startsWith('.')) {
+					continue;
+				}
+				const next = rel ? `${rel}/${e.name}` : e.name;
+				result.push(next);
+				await walk(path.join(dir, e.name), next, depth + 1);
+			}
+		} catch {
+			/* ignore */
+		}
 	}
+
+	await walk(vaultPath, '', 1);
+	return ['(vault 루트)', ...result];
+}
+
+export async function createVaultFolder(
+	vaultPath: string,
+	folderPath: string,
+): Promise<void> {
+	await fs.mkdir(path.join(vaultPath, folderPath), { recursive: true });
 }
