@@ -10,6 +10,27 @@
 - **Direct Obsidian save** — saves the generated document straight to any folder in your Obsidian Vault
 - **Sidebar integration** — accessible directly from the VS Code Activity Bar
 - **Streaming output** — watch the document being written as it generates
+- **Claude CLI mode** _(v0.2.0+)_ — use a locally installed Claude Code CLI without an API key
+
+---
+
+## Screenshots
+
+<!-- 📸 캡쳐 ①: VS Code 활동 바에서 ObsiCapture 사이드바가 열린 메인 화면 (입력창 + Generate 버튼 + Vault/폴더 선택 UI 포함) -->
+
+![ObsiCapture sidebar](https://raw.githubusercontent.com/ktmihs/Obsicapture/main/vscode-extension/images/screenshot-sidebar.png)
+
+<!-- 📸 캡쳐 ②: Claude AI가 마크다운 문서를 실시간 스트리밍으로 작성 중인 화면 (생성 진행 중 상태) -->
+
+![Streaming document generation](https://raw.githubusercontent.com/ktmihs/Obsicapture/main/vscode-extension/images/screenshot-generating.png)
+
+<!-- 📸 캡쳐 ③: 생성 완료 후 파일명/저장 폴더를 선택하고 Save to Obsidian 버튼이 보이는 화면 -->
+
+![Save to Obsidian](https://raw.githubusercontent.com/ktmihs/Obsicapture/main/vscode-extension/images/screenshot-save.png)
+
+<!-- 📸 캡쳐 ④: VS Code 설정 화면에서 ObsiCapture 항목을 검색한 결과 (claudeMode, claudeApiKey, vaultPath, maxChars 등이 보이는 상태) -->
+
+![Extension settings](https://raw.githubusercontent.com/ktmihs/Obsicapture/main/vscode-extension/images/screenshot-settings.png)
 
 ---
 
@@ -23,13 +44,13 @@ Obtain an API key from [console.anthropic.com](https://console.anthropic.com).
 
 Open `Ctrl+,`, search for **ObsiCapture**, and fill in the following:
 
-| Setting | Description |
-|---------|-------------|
-| `obsicapture.claudeApiKey` | Your Anthropic Claude API key |
-| `obsicapture.vaultPath` | Absolute path to your Obsidian Vault (e.g. `C:/Users/yourname/MyVault`) |
-| `obsicapture.defaultFolder` | Default save folder (leave blank for Vault root) |
-| `obsicapture.maxFiles` | Max files to read at once (default: 50) |
-| `obsicapture.model` | Claude model to use |
+| Setting                     | Description                                                             |
+| --------------------------- | ----------------------------------------------------------------------- |
+| `obsicapture.claudeApiKey`  | Your Anthropic Claude API key                                           |
+| `obsicapture.vaultPath`     | Absolute path to your Obsidian Vault (e.g. `C:/Users/yourname/MyVault`) |
+| `obsicapture.defaultFolder` | Default save folder (leave blank for Vault root)                        |
+| `obsicapture.maxFiles`      | Max files to read at once (default: 50)                                 |
+| `obsicapture.model`         | Claude model to use                                                     |
 
 ### 3. Usage
 
@@ -42,11 +63,11 @@ Open `Ctrl+,`, search for **ObsiCapture**, and fill in the following:
 
 ## Supported Models
 
-| Model | Notes |
-|-------|-------|
-| `claude-sonnet-4-6` | Default. Best balance of speed and quality |
-| `claude-opus-4-7` | Highest quality, ideal for complex documents |
-| `claude-haiku-4-5` | Fastest, suitable for simple documents |
+| Model               | Notes                                        |
+| ------------------- | -------------------------------------------- |
+| `claude-sonnet-4-6` | Default. Best balance of speed and quality   |
+| `claude-opus-4-7`   | Highest quality, ideal for complex documents |
+| `claude-haiku-4-5`  | Fastest, suitable for simple documents       |
 
 ---
 
