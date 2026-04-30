@@ -2,7 +2,7 @@
 	"name": "obsicapture",
 	"displayName": "ObsiCapture",
 	"description": "Generate project documentation with Claude AI and save directly to Obsidian",
-	"version": "0.2.0",
+	"version": "0.2.1",
 	"publisher": "ktmihs",
 	"icon": "images/marketplace-icon.png",
 	"repository": {
